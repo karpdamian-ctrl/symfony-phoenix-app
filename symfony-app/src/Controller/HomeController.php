@@ -36,8 +36,7 @@ class HomeController extends AbstractController
 
             if ($currentUser) {
                 foreach ($photos as $photo) {
-                    $likeRepository->setUser($currentUser);
-                    $userLikes[$photo->getId()] = $likeRepository->hasUserLikedPhoto($photo);
+                    $userLikes[$photo->getId()] = $likeRepository->hasUserLikedPhoto($currentUser, $photo);
                 }
             }
         }

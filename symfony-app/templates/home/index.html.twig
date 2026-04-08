@@ -60,6 +60,19 @@
             transition: all 0.2s ease;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
+
+        .like-form {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            margin: 0;
+        }
+
+        .like-button.loading {
+            opacity: 0.7;
+            cursor: wait;
+            transform: none;
+        }
         
         .like-button:hover {
             background: #667eea;
@@ -160,10 +173,20 @@
                     <div class="photo-image-container">
                         <img src="{{ photo.imageUrl }}" alt="{{ photo.description }}">
                         {% if currentUser %}
-                            <a href="{{ path('photo_like', {id: photo.id}) }}" class="like-button {{ userLikes[photo.id] ? 'liked' : '' }}">
-                                {{ userLikes[photo.id] ? '❤️' : '🤍' }}
-                                <span>{{ photo.likeCounter }}</span>
-                            </a>
+                            <div class="like-form">
+                                <button
+                                    type="button"
+                                    class="like-button js-like-button {{ userLikes[photo.id] ? 'liked' : '' }}"
+                                    data-photo-id="{{ photo.id }}"
+                                    data-liked="{{ userLikes[photo.id] ? 'true' : 'false' }}"
+                                    data-like-url="{{ path('photo_like', {id: photo.id}) }}"
+                                    data-unlike-url="{{ path('photo_unlike', {id: photo.id}) }}"
+                                    data-csrf-token="{{ csrf_token('photo_like') }}"
+                                >
+                                    <span class="js-like-icon">{{ userLikes[photo.id] ? '❤️' : '🤍' }}</span>
+                                    <span class="js-like-counter">{{ photo.likeCounter }}</span>
+                                </button>
+                            </div>
                         {% else %}
                             <span class="like-button disabled" title="Login to like">
                                 🤍
@@ -217,5 +240,65 @@
             <p>Be the first to share your photography!</p>
         </div>
     {% endif %}
-{% endblock %}
 
+    <script>
+        const showFlashMessage = (type, message) => {
+            const container = document.createElement('div');
+            container.className = 'flash-messages';
+
+            const flash = document.createElement('div');
+            flash.className = `flash-message ${type}`;
+            flash.textContent = message;
+
+            container.appendChild(flash);
+            document.body.appendChild(container);
+
+            setTimeout(() => container.remove(), 3200);
+        };
+
+        document.querySelectorAll('.js-like-button').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const isLiked = button.dataset.liked === 'true';
+                const url = isLiked ? button.dataset.unlikeUrl : button.dataset.likeUrl;
+                const counter = button.querySelector('.js-like-counter');
+                const icon = button.querySelector('.js-like-icon');
+
+                button.disabled = true;
+                button.classList.add('loading');
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': button.dataset.csrfToken
+                        }
+                    });
+
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        showFlashMessage('error', payload.message || 'Something went wrong.');
+                        return;
+                    }
+
+                    button.dataset.liked = payload.liked ? 'true' : 'false';
+                    button.classList.toggle('liked', payload.liked);
+                    icon.textContent = payload.liked ? '❤️' : '🤍';
+                    counter.textContent = payload.likeCounter;
+
+                    if (payload.message) {
+                        const flashType = payload.status === 'unliked' || payload.status === 'noop' ? 'info' : 'success';
+                        showFlashMessage(flashType, payload.message);
+                    }
+                } catch (error) {
+                    showFlashMessage('error', 'Could not update photo like status.');
+                } finally {
+                    button.disabled = false;
+                    button.classList.remove('loading');
+                }
+            });
+        });
+    </script>
+{% endblock %}
