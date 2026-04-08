@@ -31,6 +31,13 @@
 - Ten test integracyjny nie jest częścią standardowej paczki i powinien być uruchamiany świadomie, np. komendą `composer test-integration`, przy działającym i zseedowanym serwerze Phoenix.
 - Ponieważ mam już stabilny sposób uruchamiania obu aplikacji, podpiąłem ten test integracyjny również pod osobny job w GitHub Actions, żeby rzeczywiście pracował w CI, a nie był tylko testem uruchamianym ręcznie.
 
+### 2026-04-09
+
+- Dodałem na stronie głównej filtrowanie zdjęć po `location`, `camera`, `description`, `taken_at` oraz `username`, korzystając ze zwykłych zapytań do bazy danych przez repozytorium.
+- Do takiego filtrowania mógłbym zaprzęgnąć Elasticsearch, ale na obecnym etapie uważam to za rozwiązanie nadmiarowe. Zakres danych i złożoność wyszukiwania są na tyle małe, że prostsze i rozsądniejsze jest pozostanie przy standardowych requestach do bazy.
+- Dodałem też wyświetlanie daty zrobienia zdjęcia na kaflu, żeby użytkownik mógł wygodniej odczytać tę informację i filtrować zdjęcia również po dacie wykonania.
+
+
 ## Zadanie 1 - najważniejsze wprowadzone poprawki
 
 - Naprawiłem błąd logowania, w którym poprawny token pozwalał zalogować dowolnego użytkownika. Logowanie wymaga teraz poprawnego powiązania konkretnego tokenu z konkretnym użytkownikiem i jest zabezpieczone testami.

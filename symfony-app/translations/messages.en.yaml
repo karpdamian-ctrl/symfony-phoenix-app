@@ -31,6 +31,17 @@ photo:
     meta:
         location: 'Location'
         camera: 'Camera'
+        taken_at: 'Taken at'
+    filters:
+        title: 'Filter photos'
+        description: 'Description'
+        taken_at: 'Taken at'
+        taken_at_from: 'Taken from'
+        taken_at_to: 'Taken to'
+        invalid_date: 'Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:mm.'
+        username: 'Username'
+        submit: 'Apply filters'
+        reset: 'Clear filters'
     empty:
         title: 'No photos yet'
         subtitle: 'Be the first to share your photography!'

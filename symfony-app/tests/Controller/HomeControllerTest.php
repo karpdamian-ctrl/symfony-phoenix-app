@@ -94,6 +94,320 @@ final class HomeControllerTest extends WebTestCase
         self::assertCount(1, $crawler->filter('.empty-state'));
     }
 
+    public function testPhotosCanBeFilteredBySupportedFieldsIncludingTakenAtRange(): void
+    {
+        $matchingUser = (new User())
+            ->setUsername('match_author')
+            ->setEmail('match@example.com');
+
+        $otherUser = (new User())
+            ->setUsername('other_author')
+            ->setEmail('other@example.com');
+
+        $matchingPhoto = (new Photo())
+            ->setImageUrl('https://example.com/matching-photo.jpg')
+            ->setLocation('Warsaw Old Town')
+            ->setCamera('Canon EOS R5')
+            ->setDescription('Night skyline over the river')
+            ->setTakenAt(new \DateTimeImmutable('2026-04-08 20:15:00'))
+            ->setUser($matchingUser);
+
+        $otherPhoto = (new Photo())
+            ->setImageUrl('https://example.com/other-photo.jpg')
+            ->setLocation('Krakow Market Square')
+            ->setCamera('Sony A7 III')
+            ->setDescription('Sunny afternoon in the city center')
+            ->setTakenAt(new \DateTimeImmutable('2026-04-07 09:00:00'))
+            ->setUser($otherUser);
+
+        $this->entityManager->persist($matchingUser);
+        $this->entityManager->persist($otherUser);
+        $this->entityManager->persist($matchingPhoto);
+        $this->entityManager->persist($otherPhoto);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/', [
+            'location' => 'warsaw',
+            'camera' => 'canon',
+            'description' => 'skyline',
+            'taken_at_from' => '2026-04-08 20:00',
+            'taken_at_to' => '2026-04-08 20:30',
+            'username' => 'match',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $matchingPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('warsaw', $crawler->filter('#filter-location')->attr('value'));
+        self::assertSame('canon', $crawler->filter('#filter-camera')->attr('value'));
+        self::assertSame('skyline', $crawler->filter('#filter-description')->attr('value'));
+        self::assertSame('2026-04-08 20:00', $crawler->filter('#filter-taken-at-from')->attr('value'));
+        self::assertSame('2026-04-08 20:30', $crawler->filter('#filter-taken-at-to')->attr('value'));
+        self::assertSame('match', $crawler->filter('#filter-username')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByTakenAtLowerBoundaryOnly(): void
+    {
+        $user = (new User())
+            ->setUsername('boundary_author')
+            ->setEmail('boundary@example.com');
+
+        $olderPhoto = (new Photo())
+            ->setImageUrl('https://example.com/older-photo.jpg')
+            ->setDescription('Older photo')
+            ->setTakenAt(new \DateTimeImmutable('2026-04-08 20:14:00'))
+            ->setUser($user);
+
+        $newerPhoto = (new Photo())
+            ->setImageUrl('https://example.com/newer-photo.jpg')
+            ->setDescription('Newer photo')
+            ->setTakenAt(new \DateTimeImmutable('2026-04-08 20:15:00'))
+            ->setUser($user);
+
+        $this->entityManager->persist($user);
+        $this->entityManager->persist($olderPhoto);
+        $this->entityManager->persist($newerPhoto);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/', [
+            'taken_at_from' => '2026-04-08 20:15',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $olderPhoto->getImageUrl())));
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $newerPhoto->getImageUrl())));
+        self::assertSame('2026-04-08 20:15', $crawler->filter('#filter-taken-at-from')->attr('value'));
+        self::assertSame('', (string) $crawler->filter('#filter-taken-at-to')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByTakenAtUpperBoundaryOnly(): void
+    {
+        $user = (new User())
+            ->setUsername('upper_boundary_author')
+            ->setEmail('upper-boundary@example.com');
+
+        $olderPhoto = (new Photo())
+            ->setImageUrl('https://example.com/upper-older-photo.jpg')
+            ->setDescription('Older upper boundary photo')
+            ->setTakenAt(new \DateTimeImmutable('2026-04-08 20:15:00'))
+            ->setUser($user);
+
+        $newerPhoto = (new Photo())
+            ->setImageUrl('https://example.com/upper-newer-photo.jpg')
+            ->setDescription('Newer upper boundary photo')
+            ->setTakenAt(new \DateTimeImmutable('2026-04-08 20:16:00'))
+            ->setUser($user);
+
+        $this->entityManager->persist($user);
+        $this->entityManager->persist($olderPhoto);
+        $this->entityManager->persist($newerPhoto);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/', [
+            'taken_at_to' => '2026-04-08 20:15',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $olderPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $newerPhoto->getImageUrl())));
+        self::assertSame('', (string) $crawler->filter('#filter-taken-at-from')->attr('value'));
+        self::assertSame('2026-04-08 20:15', $crawler->filter('#filter-taken-at-to')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByTakenAtRangeWithNoMatchesWhenFromIsAfterTo(): void
+    {
+        [, $photo] = $this->createUserAndPhoto();
+
+        $crawler = $this->client->request('GET', '/', [
+            'taken_at_from' => '2026-04-09 10:00',
+            'taken_at_to' => '2026-04-08 10:00',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $photo->getImageUrl())));
+        self::assertCount(1, $crawler->filter('.empty-state'));
+        self::assertSame('2026-04-09 10:00', $crawler->filter('#filter-taken-at-from')->attr('value'));
+        self::assertSame('2026-04-08 10:00', $crawler->filter('#filter-taken-at-to')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByUsername(): void
+    {
+        $matchingUser = (new User())
+            ->setUsername('emma_wilson')
+            ->setEmail('emma@example.com')
+            ->setName('Emma')
+            ->setLastName('Wilson');
+
+        $otherUser = (new User())
+            ->setUsername('anna_nowak')
+            ->setEmail('other-emma@example.com')
+            ->setName('Anna')
+            ->setLastName('Nowak');
+
+        $matchingPhoto = (new Photo())
+            ->setImageUrl('https://example.com/emma-wilson-photo.jpg')
+            ->setDescription('Emma photo')
+            ->setUser($matchingUser);
+
+        $otherPhoto = (new Photo())
+            ->setImageUrl('https://example.com/other-emma-photo.jpg')
+            ->setDescription('Other photo')
+            ->setUser($otherUser);
+
+        $this->entityManager->persist($matchingUser);
+        $this->entityManager->persist($otherUser);
+        $this->entityManager->persist($matchingPhoto);
+        $this->entityManager->persist($otherPhoto);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/', [
+            'username' => 'emma_wil',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $matchingPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('emma_wil', $crawler->filter('#filter-username')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByUsernameCaseInsensitively(): void
+    {
+        $matchingUser = (new User())
+            ->setUsername('MixedCaseAuthor')
+            ->setEmail('mixed@example.com');
+
+        $otherUser = (new User())
+            ->setUsername('different_author')
+            ->setEmail('different@example.com');
+
+        $matchingPhoto = (new Photo())
+            ->setImageUrl('https://example.com/mixed-case-photo.jpg')
+            ->setDescription('Mixed case photo')
+            ->setUser($matchingUser);
+
+        $otherPhoto = (new Photo())
+            ->setImageUrl('https://example.com/different-case-photo.jpg')
+            ->setDescription('Different case photo')
+            ->setUser($otherUser);
+
+        $this->entityManager->persist($matchingUser);
+        $this->entityManager->persist($otherUser);
+        $this->entityManager->persist($matchingPhoto);
+        $this->entityManager->persist($otherPhoto);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/', [
+            'username' => 'mixedcase',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $matchingPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('mixedcase', $crawler->filter('#filter-username')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByLocationOnly(): void
+    {
+        [$matchingPhoto, $otherPhoto] = $this->createPhotosForSingleTextFilter(
+            'location',
+            'Warsaw Riverside',
+            'Gdansk Harbor'
+        );
+
+        $crawler = $this->client->request('GET', '/', [
+            'location' => 'warsaw',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $matchingPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('warsaw', $crawler->filter('#filter-location')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByCameraOnly(): void
+    {
+        [$matchingPhoto, $otherPhoto] = $this->createPhotosForSingleTextFilter(
+            'camera',
+            'Canon EOS R6',
+            'Sony A7 IV'
+        );
+
+        $crawler = $this->client->request('GET', '/', [
+            'camera' => 'canon',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $matchingPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('canon', $crawler->filter('#filter-camera')->attr('value'));
+    }
+
+    public function testPhotosCanBeFilteredByDescriptionOnly(): void
+    {
+        [$matchingPhoto, $otherPhoto] = $this->createPhotosForSingleTextFilter(
+            'description',
+            'Golden hour skyline',
+            'Forest trail in morning fog'
+        );
+
+        $crawler = $this->client->request('GET', '/', [
+            'description' => 'skyline',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $matchingPhoto->getImageUrl())));
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('skyline', $crawler->filter('#filter-description')->attr('value'));
+    }
+
+    public function testWhitespaceOnlyFiltersDoNotRestrictResults(): void
+    {
+        [, $firstPhoto] = $this->createUserAndPhoto();
+
+        $otherUser = (new User())
+            ->setUsername('whitespace_user')
+            ->setEmail('whitespace@example.com');
+
+        $otherPhoto = (new Photo())
+            ->setImageUrl('https://example.com/whitespace-photo.jpg')
+            ->setDescription('Whitespace photo')
+            ->setUser($otherUser);
+
+        $this->entityManager->persist($otherUser);
+        $this->entityManager->persist($otherPhoto);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/', [
+            'location' => '   ',
+            'camera' => '   ',
+            'description' => '   ',
+            'username' => '   ',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $firstPhoto->getImageUrl())));
+        self::assertCount(1, $crawler->filter(sprintf('img[src="%s"]', $otherPhoto->getImageUrl())));
+        self::assertSame('', (string) $crawler->filter('#filter-location')->attr('value'));
+        self::assertSame('', (string) $crawler->filter('#filter-camera')->attr('value'));
+        self::assertSame('', (string) $crawler->filter('#filter-description')->attr('value'));
+        self::assertSame('', (string) $crawler->filter('#filter-username')->attr('value'));
+    }
+
+    public function testInvalidTakenAtFormatShowsErrorAndNoPhotos(): void
+    {
+        [, $photo] = $this->createUserAndPhoto();
+
+        $crawler = $this->client->request('GET', '/', [
+            'taken_at_from' => '2026',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:mm.', (string) $this->client->getResponse()->getContent());
+        self::assertCount(0, $crawler->filter(sprintf('img[src="%s"]', $photo->getImageUrl())));
+        self::assertCount(1, $crawler->filter('.empty-state'));
+        self::assertSame('2026', $crawler->filter('#filter-taken-at-from')->attr('value'));
+    }
+
     /**
      * @return array{0: User, 1: Photo}
      */
@@ -115,6 +429,52 @@ final class HomeControllerTest extends WebTestCase
         $this->entityManager->flush();
 
         return [$user, $photo];
+    }
+
+    /**
+     * @return array{0: Photo, 1: Photo}
+     */
+    private function createPhotosForSingleTextFilter(string $field, string $matchingValue, string $otherValue): array
+    {
+        $matchingUser = (new User())
+            ->setUsername(sprintf('%s_match_user', $field))
+            ->setEmail(sprintf('%s_match@example.com', $field));
+
+        $otherUser = (new User())
+            ->setUsername(sprintf('%s_other_user', $field))
+            ->setEmail(sprintf('%s_other@example.com', $field));
+
+        $matchingPhoto = (new Photo())
+            ->setImageUrl(sprintf('https://example.com/%s-matching-photo.jpg', $field))
+            ->setDescription('Matching single filter photo')
+            ->setUser($matchingUser);
+
+        $otherPhoto = (new Photo())
+            ->setImageUrl(sprintf('https://example.com/%s-other-photo.jpg', $field))
+            ->setDescription('Other single filter photo')
+            ->setUser($otherUser);
+
+        match ($field) {
+            'location' => $matchingPhoto->setLocation($matchingValue),
+            'camera' => $matchingPhoto->setCamera($matchingValue),
+            'description' => $matchingPhoto->setDescription($matchingValue),
+            default => throw new \InvalidArgumentException('Unsupported filter field.'),
+        };
+
+        match ($field) {
+            'location' => $otherPhoto->setLocation($otherValue),
+            'camera' => $otherPhoto->setCamera($otherValue),
+            'description' => $otherPhoto->setDescription($otherValue),
+            default => throw new \InvalidArgumentException('Unsupported filter field.'),
+        };
+
+        $this->entityManager->persist($matchingUser);
+        $this->entityManager->persist($otherUser);
+        $this->entityManager->persist($matchingPhoto);
+        $this->entityManager->persist($otherPhoto);
+        $this->entityManager->flush();
+
+        return [$matchingPhoto, $otherPhoto];
     }
 
     private function logInUser(User $user): void

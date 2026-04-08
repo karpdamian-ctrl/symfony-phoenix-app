@@ -11,5 +11,5 @@ interface PhotoRepositoryInterface
     /**
      * @return array<int, Photo>
      */
-    public function findAllWithUsers(): array;
+    public function findAllWithUsers(array $filters = []): array;
 }

@@ -9,6 +9,148 @@
             margin-top: 30px;
             justify-content: center;
         }
+
+        .filters-panel {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 24px;
+            margin: 0 auto 30px;
+            max-width: 1200px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .filters-title {
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            align-items: end;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .filter-field label {
+            color: #4a4a4a;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .filter-field--description {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .filter-field--camera {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .filter-field--location {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .filter-field--username {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .filter-field--range {
+            grid-column: 3;
+            grid-row: 1 / span 2;
+            align-self: stretch;
+        }
+
+        .filter-field--range > label {
+            margin-bottom: 2px;
+        }
+
+        .filter-range {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid #e0e6ff;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #f8faff 0%, #f2f5ff 100%);
+            height: 100%;
+        }
+
+        .filter-range-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .filter-range-field label {
+            font-size: 0.82rem;
+            color: #5a6488;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .filter-field input {
+            width: 100%;
+            border: 1px solid #d7dbef;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.95rem;
+            color: #333;
+            background: #fff;
+        }
+
+        .filter-field input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+        }
+
+        .filters-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+            justify-content: flex-start;
+        }
+
+        .filters-button {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .filters-button.primary {
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+            box-shadow: 0 10px 24px rgba(102, 126, 234, 0.28);
+        }
+
+        .filters-button.secondary {
+            color: #4c5cc5;
+            background: #edf1ff;
+        }
+
+        .filters-button:hover {
+            transform: translateY(-1px);
+        }
         
         .photo-card {
             background: white;
@@ -162,10 +304,104 @@
             font-size: 2em;
             margin-bottom: 10px;
         }
+
+        @media (max-width: 1240px) {
+            .filters-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .filter-field--description,
+            .filter-field--camera,
+            .filter-field--location,
+            .filter-field--username,
+            .filter-field--range {
+                grid-column: auto;
+                grid-row: auto;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 380px));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-field--description,
+            .filter-field--camera,
+            .filter-field--location,
+            .filter-field--username,
+            .filter-field--range {
+                grid-column: span 1;
+                grid-row: auto;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block body %}
+    <form method="get" class="filters-panel">
+        <div class="filters-title">{{ 'photo.filters.title'|trans }}</div>
+
+        <div class="filters-grid">
+            <div class="filter-field filter-field--location">
+                <label for="filter-location">{{ 'photo.meta.location'|trans }}</label>
+                <input id="filter-location" name="location" type="text" value="{{ filters.location ?? '' }}">
+            </div>
+
+            <div class="filter-field filter-field--camera">
+                <label for="filter-camera">{{ 'photo.meta.camera'|trans }}</label>
+                <input id="filter-camera" name="camera" type="text" value="{{ filters.camera ?? '' }}">
+            </div>
+
+            <div class="filter-field filter-field--description">
+                <label for="filter-description">{{ 'photo.filters.description'|trans }}</label>
+                <input id="filter-description" name="description" type="text" value="{{ filters.description ?? '' }}">
+            </div>
+
+            <div class="filter-field filter-field--range">
+                <label>{{ 'photo.filters.taken_at'|trans }}</label>
+                <div class="filter-range">
+                    <div class="filter-range-field">
+                        <label for="filter-taken-at-from">{{ 'photo.filters.taken_at_from'|trans }}</label>
+                        <input
+                            id="filter-taken-at-from"
+                            name="taken_at_from"
+                            type="text"
+                            inputmode="numeric"
+                            placeholder="YYYY-MM-DD HH:mm"
+                            value="{{ filters.taken_at_from ?? '' }}"
+                        >
+                    </div>
+
+                    <div class="filter-range-field">
+                        <label for="filter-taken-at-to">{{ 'photo.filters.taken_at_to'|trans }}</label>
+                        <input
+                            id="filter-taken-at-to"
+                            name="taken_at_to"
+                            type="text"
+                            inputmode="numeric"
+                            placeholder="YYYY-MM-DD HH:mm"
+                            value="{{ filters.taken_at_to ?? '' }}"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-field filter-field--username">
+                <label for="filter-username">{{ 'photo.filters.username'|trans }}</label>
+                <input id="filter-username" name="username" type="text" value="{{ filters.username ?? '' }}">
+            </div>
+        </div>
+
+        <div class="filters-actions">
+            <button type="submit" class="filters-button primary">{{ 'photo.filters.submit'|trans }}</button>
+            <a href="{{ path('home') }}" class="filters-button secondary">{{ 'photo.filters.reset'|trans }}</a>
+        </div>
+    </form>
+
     {% if photos|length > 0 %}
         <div class="photo-grid">
             {% for photo in photos %}
@@ -211,6 +447,13 @@
                                 <div class="photo-meta-item">
                                     <span>📷</span>
                                     <strong>{{ 'photo.meta.camera'|trans }}:</strong> {{ photo.camera }}
+                                </div>
+                            {% endif %}
+
+                            {% if photo.takenAt %}
+                                <div class="photo-meta-item">
+                                    <span>🗓️</span>
+                                    <strong>{{ 'photo.meta.taken_at'|trans }}:</strong> {{ photo.takenAt|date('Y-m-d H:i') }}
                                 </div>
                             {% endif %}
                         </div>

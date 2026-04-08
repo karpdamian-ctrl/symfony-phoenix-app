@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Home\Controller;
 
 use App\Likes\LikeRepositoryInterface;
+use App\Photo\Exception\InvalidPhotoFilterException;
 use App\Photo\Repository\PhotoRepositoryInterface;
 use App\Shared\Controller\AppController;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,7 +24,21 @@ class HomeController extends AppController
         PhotoRepositoryInterface $photoRepository,
         LikeRepositoryInterface $likeRepository
     ): Response {
-        $photos = $photoRepository->findAllWithUsers();
+        $filters = [
+            'location' => $this->normalizeFilterValue($request->query->get('location')),
+            'camera' => $this->normalizeFilterValue($request->query->get('camera')),
+            'description' => $this->normalizeFilterValue($request->query->get('description')),
+            'taken_at_from' => $this->normalizeFilterValue($request->query->get('taken_at_from')),
+            'taken_at_to' => $this->normalizeFilterValue($request->query->get('taken_at_to')),
+            'username' => $this->normalizeFilterValue($request->query->get('username')),
+        ];
+
+        try {
+            $photos = $photoRepository->findAllWithUsers($filters);
+        } catch (InvalidPhotoFilterException) {
+            $this->addFlash('error', $this->translate('photo.filters.invalid_date'));
+            $photos = [];
+        }
 
         $currentUser = $this->resolveCurrentUser($request, $em, true);
         $userLikes = [];
@@ -36,8 +51,20 @@ class HomeController extends AppController
 
         return $this->render('home/index.html.twig', [
             'photos' => $photos,
+            'filters' => $filters,
             'currentUser' => $currentUser,
             'userLikes' => $userLikes,
         ]);
+    }
+
+    private function normalizeFilterValue(mixed $value): ?string
+    {
+        if (!\is_string($value)) {
+            return null;
+        }
+
+        $trimmedValue = trim($value);
+
+        return $trimmedValue === '' ? null : $trimmedValue;
     }
 }
