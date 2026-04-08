@@ -50,6 +50,21 @@ profile:
     navigation:
         link: 'My Profile'
         back_to_gallery: 'Back to Gallery'
+    import:
+        title: 'Phoenix API Import'
+        subtitle: 'Save your Phoenix API access token and import your partner photos into SymfonyApp.'
+        token_label: 'Phoenix API token'
+        token_placeholder: 'Enter your Phoenix API token'
+        save_action: 'Save token'
+        import_action: 'Import photos'
+        token_saved: 'Phoenix API token saved.'
+        token_empty: 'Phoenix API token cannot be empty.'
+        token_too_long: 'Phoenix API token is too long.'
+        token_missing: 'Provide and save a Phoenix API token before importing photos.'
+        invalid_token: 'Invalid Phoenix API token.'
+        failed: 'Photos could not be imported right now.'
+        no_new_photos: 'No new photos were imported.'
+        success: '%count% photos imported from Phoenix API.'
     field:
         email: 'Email'
         age: 'Age'

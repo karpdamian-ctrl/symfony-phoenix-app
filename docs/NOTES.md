@@ -24,6 +24,11 @@
 - Dodałem też interfejsy dla serwisów i repozytoriów tam, gdzie miało to sens, a następnie przepiąłem dependency injection na kontrakty zamiast konkretnych implementacji.
 - Doinstalowałem `pcov` do obrazu Symfony w `Dockerfile`, żeby móc generować pokrycie testami w kontenerze. W większym projekcie rozdzieliłbym obrazy bardziej precyzyjnie na środowiska dev/test/prod, ale na obecnym etapie byłoby to przerostem formy nad treścią.
 - Dodałem do `README` badge'e pokazujące status pipeline'ów oraz pokrycie testami dla Symfony i Phoenix, tak aby jakość projektu była widoczna od razu z poziomu repozytorium.
+- Dodałem też w profilu użytkownika formularz zapisu tokenu Phoenix API, tak aby użytkownik mógł samodzielnie podać i zapisać dane potrzebne do późniejszego importu zdjęć.
+- Rozszerzyłem endpoint Phoenix `GET /api/photos` o whitelistę parametru `fields`, dzięki czemu domyślnie zwraca tylko podstawowe dane (`id`, `photo_url`), a dodatkowe atrybuty zdjęcia są dołączane wyłącznie wtedy, gdy klient jawnie o nie poprosi.
+- Dodałem też unikalne ograniczenie dla zdjęć w Symfony po `user_id + image_url`, żeby baza pilnowała tej samej reguły co logika importu i nie pozwalała zapisać dwa razy tego samego zdjęcia dla jednego użytkownika.
+- Wszystkie dotychczasowe testy Symfony związane z importem zdjęć korzystały z mocków/stubów odpowiedzi z Phoenixa, dzięki czemu zwykła paczka testów nie zależy od żyjącego zewnętrznego serwera. Żeby mimo to pokryć prawdziwy przepływ między aplikacjami, dodałem osobny test integracyjny odpy­tujący żywy serwer Phoenix.
+- Ten test integracyjny nie jest częścią standardowej paczki i powinien być uruchamiany świadomie, np. komendą `composer test-integration`, przy działającym i zseedowanym serwerze Phoenix.
 
 ## Zadanie 1 - najważniejsze wprowadzone poprawki
 

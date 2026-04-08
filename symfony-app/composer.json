@@ -48,7 +48,16 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit",
+    "test": [
+      "php bin/console doctrine:database:create --env=test --if-not-exists",
+      "php bin/console doctrine:migrations:migrate --env=test --no-interaction",
+      "vendor/bin/phpunit"
+    ],
+    "test-integration": [
+      "php bin/console doctrine:database:create --env=test --if-not-exists",
+      "php bin/console doctrine:migrations:migrate --env=test --no-interaction",
+      "RUN_PHOENIX_INTEGRATION=1 vendor/bin/phpunit tests/Integration"
+    ],
     "phpstan": "php -d memory_limit=512M vendor/bin/phpstan analyse",
     "php-cs-fixer": "php-cs-fixer fix --dry-run --diff",
     "auto-scripts": {

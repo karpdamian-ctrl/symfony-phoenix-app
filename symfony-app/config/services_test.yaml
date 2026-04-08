@@ -1,9 +1,19 @@
 services:
+    Symfony\Contracts\HttpClient\HttpClientInterface:
+        alias: http_client
+        public: true
+
     App\Infrastructure\Http\PhoenixClient:
         synthetic: true
         public: true
 
-    App\Domain\Port\PhoenixClientInterface: '@App\Infrastructure\Http\PhoenixClient'
+    App\Domain\Port\PhoenixClientInterface:
+        alias: App\Infrastructure\Http\PhoenixClient
+        public: true
+
+    App\Photo\Service\PhoenixPhotoImportServiceInterface:
+        alias: App\Photo\Service\PhoenixPhotoImportService
+        public: true
 
     test.App\Infrastructure\Http\PhoenixClient:
         alias: App\Infrastructure\Http\PhoenixClient
@@ -11,4 +21,8 @@ services:
 
     test.App\Domain\Port\PhoenixClientInterface:
         alias: App\Domain\Port\PhoenixClientInterface
+        public: true
+
+    test.App\Photo\Service\PhoenixPhotoImportServiceInterface:
+        alias: App\Photo\Service\PhoenixPhotoImportServiceInterface
         public: true

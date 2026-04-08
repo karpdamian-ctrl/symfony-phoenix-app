@@ -127,6 +127,74 @@
             padding-top: 30px;
             border-top: 2px solid #f0f0f0;
         }
+
+        .profile-import {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .profile-import-card {
+            background: #f8f9fa;
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .profile-import-title {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .profile-import-subtitle {
+            color: #666;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .profile-import-form {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .profile-import-label {
+            font-size: 0.9em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .profile-import-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d0d7de;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .profile-import-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .profile-import-button {
+            padding: 12px 20px;
+            border: 0;
+            border-radius: 999px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .profile-import-button.save {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+        }
+
+        .profile-import-button.import {
+            background: linear-gradient(135deg, #ff9800 0%, #ef6c00 100%);
+        }
         
         .stat-item {
             text-align: center;
@@ -201,6 +269,36 @@
             <div class="stat-item">
                 <div class="stat-number">{{ user.photos|length }}</div>
                 <div class="stat-label">{{ 'profile.stats.photos'|trans }}</div>
+            </div>
+        </div>
+
+        <div class="profile-import">
+            <div class="profile-import-card">
+                <h2 class="profile-import-title">{{ 'profile.import.title'|trans }}</h2>
+                <p class="profile-import-subtitle">{{ 'profile.import.subtitle'|trans }}</p>
+
+                <form method="post" action="{{ path('profile_save_phoenix_token') }}" class="profile-import-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile_save_phoenix_token') }}">
+                    <label for="phoenix_api_token" class="profile-import-label">{{ 'profile.import.token_label'|trans }}</label>
+                    <input
+                        id="phoenix_api_token"
+                        name="phoenix_api_token"
+                        type="text"
+                        value="{{ user.phoenixApiToken }}"
+                        placeholder="{{ 'profile.import.token_placeholder'|trans }}"
+                        class="profile-import-input"
+                    >
+                    <div class="profile-import-actions">
+                        <button type="submit" class="profile-import-button save">{{ 'profile.import.save_action'|trans }}</button>
+                    </div>
+                </form>
+
+                <form method="post" action="{{ path('profile_import_photos') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile_import_photos') }}">
+                    <div class="profile-import-actions">
+                        <button type="submit" class="profile-import-button import">{{ 'profile.import.import_action'|trans }}</button>
+                    </div>
+                </form>
             </div>
         </div>
         

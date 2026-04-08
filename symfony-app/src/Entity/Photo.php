@@ -8,7 +8,9 @@ use App\Photo\Repository\PhotoRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
-#[ORM\Table(name: 'photos')]
+#[ORM\Table(name: 'photos', uniqueConstraints: [
+    new ORM\UniqueConstraint(name: 'uniq_photos_user_image_url', columns: ['user_id', 'image_url']),
+])]
 class Photo
 {
     #[ORM\Id]

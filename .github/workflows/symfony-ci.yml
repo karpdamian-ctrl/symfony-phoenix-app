@@ -31,6 +31,7 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app
+      PHOENIX_BASE_URL: http://127.0.0.1:4000
       TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app_test
 
     steps:
@@ -53,7 +54,7 @@ jobs:
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
 
       - name: Run PHPUnit
-        run: composer test
+        run: vendor/bin/phpunit
 
   symfony-coverage:
     name: Symfony coverage
@@ -81,6 +82,7 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app
+      PHOENIX_BASE_URL: http://127.0.0.1:4000
       TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app_test
 
     steps:
@@ -124,6 +126,7 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app
+      PHOENIX_BASE_URL: http://127.0.0.1:4000
       TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app_test
 
     steps:
@@ -154,6 +157,7 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app
+      PHOENIX_BASE_URL: http://127.0.0.1:4000
       TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app_test
 
     steps:

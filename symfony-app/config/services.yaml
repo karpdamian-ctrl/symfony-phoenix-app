@@ -7,6 +7,7 @@ services:
     App\Likes\LikeRepositoryInterface: '@App\Likes\LikeRepository'
     App\Likes\LikeServiceInterface: '@App\Likes\LikeService'
     App\Photo\Repository\PhotoRepositoryInterface: '@App\Photo\Repository\PhotoRepository'
+    App\Photo\Service\PhoenixPhotoImportServiceInterface: '@App\Photo\Service\PhoenixPhotoImportService'
     App\Photo\Service\PhotoReactionServiceInterface: '@App\Photo\Service\PhotoReactionService'
 
     App\:
@@ -15,3 +16,7 @@ services:
             - '../src/Kernel.php'
             - '../src/Shared/Controller/AppController.php'
             - '../src/Likes/DuplicateLikeException.php'
+
+    App\Photo\Service\PhoenixPhotoImportService:
+        arguments:
+            $phoenixBaseUrl: '%env(string:PHOENIX_BASE_URL)%'

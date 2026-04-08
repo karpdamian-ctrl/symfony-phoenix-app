@@ -6,6 +6,8 @@ namespace App\Tests\Controller;
 
 use App\Entity\Photo;
 use App\Entity\User;
+use App\Photo\Service\PhoenixPhotoImportResult;
+use App\Photo\Service\PhoenixPhotoImportServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -20,6 +22,7 @@ final class ProfileControllerTest extends WebTestCase
     {
         self::ensureKernelShutdown();
         $this->client = static::createClient();
+        $this->client->disableReboot();
         $this->entityManager = $this->client->getContainer()->get('doctrine')->getManager();
 
         $connection = $this->entityManager->getConnection();
@@ -74,6 +77,202 @@ final class ProfileControllerTest extends WebTestCase
         self::assertStringContainsString('Photos', (string) $this->client->getResponse()->getContent());
     }
 
+    public function testUserCanSavePhoenixApiToken(): void
+    {
+        $user = $this->createUserWithProfile();
+        $this->logInUser($user);
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/phoenix-token"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/phoenix-token', [
+            '_token' => $csrfToken,
+            'phoenix_api_token' => 'phoenix-test-token',
+        ]);
+
+        self::assertResponseRedirects('/profile');
+
+        $this->entityManager->clear();
+        $updatedUser = $this->entityManager->getRepository(User::class)->find($user->getId());
+
+        self::assertInstanceOf(User::class, $updatedUser);
+        self::assertSame('phoenix-test-token', $updatedUser->getPhoenixApiToken());
+    }
+
+    public function testUserSeesValidationMessageWhenPhoenixApiTokenIsTooLong(): void
+    {
+        $user = $this->createUserWithProfile();
+        $this->logInUser($user);
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/phoenix-token"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/phoenix-token', [
+            '_token' => $csrfToken,
+            'phoenix_api_token' => str_repeat('a', 256),
+        ]);
+
+        self::assertResponseRedirects('/profile');
+        $this->client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Phoenix API token is too long.', (string) $this->client->getResponse()->getContent());
+
+        $this->entityManager->clear();
+        $updatedUser = $this->entityManager->getRepository(User::class)->find($user->getId());
+
+        self::assertInstanceOf(User::class, $updatedUser);
+        self::assertNull($updatedUser->getPhoenixApiToken());
+    }
+
+    public function testUserSeesValidationMessageWhenPhoenixApiTokenIsEmpty(): void
+    {
+        $user = $this->createUserWithProfile()->setPhoenixApiToken('existing-token');
+        $this->entityManager->flush();
+        $this->logInUser($user);
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/phoenix-token"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/phoenix-token', [
+            '_token' => $csrfToken,
+            'phoenix_api_token' => '   ',
+        ]);
+
+        self::assertResponseRedirects('/profile');
+        $this->client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Phoenix API token cannot be empty.', (string) $this->client->getResponse()->getContent());
+
+        $this->entityManager->clear();
+        $updatedUser = $this->entityManager->getRepository(User::class)->find($user->getId());
+
+        self::assertInstanceOf(User::class, $updatedUser);
+        self::assertSame('existing-token', $updatedUser->getPhoenixApiToken());
+    }
+
+    public function testImportPhotosRequiresSavedToken(): void
+    {
+        $user = $this->createUserWithProfile();
+        $this->logInUser($user);
+
+        $this->replaceImportService(new class () implements PhoenixPhotoImportServiceInterface {
+            public function import(User $user): PhoenixPhotoImportResult
+            {
+                throw new \LogicException('Import service should not be called when token is missing.');
+            }
+        });
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/import-photos"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/import-photos', [
+            '_token' => $csrfToken,
+        ]);
+
+        self::assertResponseRedirects('/profile');
+        $this->client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Provide and save a Phoenix API token before importing photos.', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testImportPhotosShowsInvalidTokenMessage(): void
+    {
+        $user = $this->createUserWithProfile()->setPhoenixApiToken('invalid-token');
+        $this->entityManager->flush();
+        $this->logInUser($user);
+
+        $this->replaceImportService(new class () implements PhoenixPhotoImportServiceInterface {
+            public function import(User $user): PhoenixPhotoImportResult
+            {
+                return PhoenixPhotoImportResult::invalidToken();
+            }
+        });
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/import-photos"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/import-photos', [
+            '_token' => $csrfToken,
+        ]);
+
+        self::assertResponseRedirects('/profile');
+        $this->client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Invalid Phoenix API token.', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testImportPhotosShowsGenericFailureMessageWhenImportFails(): void
+    {
+        $user = $this->createUserWithProfile()->setPhoenixApiToken('valid-token');
+        $this->entityManager->flush();
+        $this->logInUser($user);
+
+        $this->replaceImportService(new class () implements PhoenixPhotoImportServiceInterface {
+            public function import(User $user): PhoenixPhotoImportResult
+            {
+                throw new \RuntimeException('Phoenix is unavailable.');
+            }
+        });
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/import-photos"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/import-photos', [
+            '_token' => $csrfToken,
+        ]);
+
+        self::assertResponseRedirects('/profile');
+        $this->client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Photos could not be imported right now.', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testImportPhotosShowsSuccessMessage(): void
+    {
+        $user = $this->createUserWithProfile()->setPhoenixApiToken('valid-token');
+        $this->entityManager->flush();
+        $this->logInUser($user);
+
+        $this->replaceImportService(new class () implements PhoenixPhotoImportServiceInterface {
+            public function import(User $user): PhoenixPhotoImportResult
+            {
+                return PhoenixPhotoImportResult::success(1);
+            }
+        });
+
+        $crawler = $this->client->request('GET', '/profile');
+        $csrfToken = (string) $crawler
+            ->filter('form[action="/profile/import-photos"] input[name="_token"]')
+            ->attr('value');
+
+        $this->client->request('POST', '/profile/import-photos', [
+            '_token' => $csrfToken,
+        ]);
+
+        self::assertResponseRedirects('/profile');
+        $this->client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('1 photos imported from Phoenix API.', (string) $this->client->getResponse()->getContent());
+    }
+
     private function createUserWithProfile(): User
     {
         $user = new User();
@@ -101,6 +300,11 @@ final class ProfileControllerTest extends WebTestCase
 
         $this->entityManager->persist($photo);
         $this->entityManager->flush();
+    }
+
+    private function replaceImportService(PhoenixPhotoImportServiceInterface $service): void
+    {
+        static::getContainer()->set(PhoenixPhotoImportServiceInterface::class, $service);
     }
 
     private function logInUser(User $user): void
