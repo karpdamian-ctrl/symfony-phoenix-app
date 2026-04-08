@@ -5,8 +5,8 @@ on:
   pull_request:
 
 jobs:
-  symfony:
-    name: Symfony QA
+  symfony-test:
+    name: Symfony test
     runs-on: ubuntu-latest
 
     services:
@@ -51,11 +51,135 @@ jobs:
           php bin/console doctrine:database:create --env=test --if-not-exists
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
 
-      - name: Run PHP QA checks
-        run: composer qa
+      - name: Run PHPUnit
+        run: composer test
 
-  phoenix:
-    name: Phoenix QA
+  symfony-phpstan:
+    name: Symfony PHPStan
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: symfony-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo_pgsql
+          tools: composer
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHPStan
+        run: composer phpstan
+
+  symfony-php-cs-fixer:
+    name: Symfony PHP CS Fixer
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: symfony-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo_pgsql
+          tools: composer
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHP CS Fixer
+        run: composer php-cs-fixer
+
+  phoenix-format:
+    name: Phoenix format
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: phoenix-api
+
+    env:
+      DB_HOST: 127.0.0.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.15.7'
+          otp-version: '26.2'
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            phoenix-api/deps
+            phoenix-api/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('phoenix-api/mix.lock') }}
+
+      - name: Install dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+  phoenix-credo:
+    name: Phoenix Credo
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: phoenix-api
+
+    env:
+      DB_HOST: 127.0.0.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.15.7'
+          otp-version: '26.2'
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            phoenix-api/deps
+            phoenix-api/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('phoenix-api/mix.lock') }}
+
+      - name: Install dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+
+      - name: Run Credo
+        run: mix credo
+
+  phoenix-test:
+    name: Phoenix test
     runs-on: ubuntu-latest
 
     services:
@@ -104,17 +228,43 @@ jobs:
           mix local.rebar --force
           mix deps.get
 
-      - name: Check formatting
-        run: mix format --check-formatted
-
-      - name: Run Credo
-        run: mix credo
-
       - name: Run tests
         run: mix test
 
+  phoenix-dialyzer:
+    name: Phoenix Dialyzer
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: phoenix-api
+
+    env:
+      MIX_ENV: dev
+      DB_HOST: 127.0.0.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.15.7'
+          otp-version: '26.2'
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            phoenix-api/deps
+            phoenix-api/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('phoenix-api/mix.lock') }}
+
+      - name: Install dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+
       - name: Run Dialyzer
-        env:
-          MIX_ENV: dev
-          DB_HOST: 127.0.0.1
         run: mix dialyzer

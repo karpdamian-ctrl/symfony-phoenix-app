@@ -51,11 +51,6 @@
     "test": "vendor/bin/phpunit",
     "phpstan": "phpstan analyse",
     "php-cs-fixer": "php-cs-fixer fix --dry-run --diff",
-    "qa": [
-      "@test",
-      "@phpstan",
-      "@php-cs-fixer"
-    ],
     "auto-scripts": {
       "cache:clear": "symfony-cmd",
       "assets:install %PUBLIC_DIR%": "symfony-cmd"
