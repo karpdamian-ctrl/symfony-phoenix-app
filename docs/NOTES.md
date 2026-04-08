@@ -29,6 +29,7 @@
 - Dodałem też unikalne ograniczenie dla zdjęć w Symfony po `user_id + image_url`, żeby baza pilnowała tej samej reguły co logika importu i nie pozwalała zapisać dwa razy tego samego zdjęcia dla jednego użytkownika.
 - Wszystkie dotychczasowe testy Symfony związane z importem zdjęć korzystały z mocków/stubów odpowiedzi z Phoenixa, dzięki czemu zwykła paczka testów nie zależy od żyjącego zewnętrznego serwera. Żeby mimo to pokryć prawdziwy przepływ między aplikacjami, dodałem osobny test integracyjny odpy­tujący żywy serwer Phoenix.
 - Ten test integracyjny nie jest częścią standardowej paczki i powinien być uruchamiany świadomie, np. komendą `composer test-integration`, przy działającym i zseedowanym serwerze Phoenix.
+- Ponieważ mam już stabilny sposób uruchamiania obu aplikacji, podpiąłem ten test integracyjny również pod osobny job w GitHub Actions, żeby rzeczywiście pracował w CI, a nie był tylko testem uruchamianym ręcznie.
 
 ## Zadanie 1 - najważniejsze wprowadzone poprawki
 

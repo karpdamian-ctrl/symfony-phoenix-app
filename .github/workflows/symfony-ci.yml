@@ -56,6 +56,101 @@ jobs:
       - name: Run PHPUnit
         run: vendor/bin/phpunit
 
+  symfony-phoenix-integration:
+    name: Symfony Phoenix integration
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: symfony_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d symfony_app"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app
+      PHOENIX_BASE_URL: http://127.0.0.1:4000
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/symfony_app_test
+      SECRET_KEY_BASE: thisisasecret111
+      PHX_HOST: 127.0.0.1
+      PORT: 4000
+      MIX_ENV: test
+      PHOENIX_DATABASE_URL: ecto://postgres:postgres@127.0.0.1:5432/phoenix_api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo_pgsql
+          tools: composer
+          coverage: none
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16.3'
+          otp-version: '26.2'
+
+      - name: Install Symfony dependencies
+        working-directory: symfony-app
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install Phoenix dependencies
+        working-directory: phoenix-api
+        run: mix deps.get
+
+      - name: Create Phoenix database
+        env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE phoenix_api;"
+
+      - name: Prepare Phoenix database
+        working-directory: phoenix-api
+        env:
+          DATABASE_URL: ${{ env.PHOENIX_DATABASE_URL }}
+        run: |
+          mix ecto.migrate
+          mix run priv/repo/seeds.exs
+
+      - name: Start Phoenix server
+        working-directory: phoenix-api
+        env:
+          DATABASE_URL: ${{ env.PHOENIX_DATABASE_URL }}
+        run: nohup mix phx.server > /tmp/phoenix.log 2>&1 &
+
+      - name: Wait for Phoenix server
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4000/api/photos -H 'access-token: test_token_user1_abc123' >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/phoenix.log
+          exit 1
+
+      - name: Prepare Symfony test database
+        working-directory: symfony-app
+        run: |
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+
+      - name: Run Symfony integration tests
+        working-directory: symfony-app
+        run: composer test-integration
+
   symfony-coverage:
     name: Symfony coverage
     runs-on: ubuntu-latest
