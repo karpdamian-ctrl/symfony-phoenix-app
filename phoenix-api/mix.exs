@@ -39,6 +39,8 @@ defmodule PhoenixApi.MixProject do
       {:phoenix_view, "~> 2.0"},
       {:phoenix_live_reload, "~> 1.4", only: :dev},
       {:floki, ">= 0.30.0", only: :test},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
       {:phoenix_live_dashboard, "~> 0.8"},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},

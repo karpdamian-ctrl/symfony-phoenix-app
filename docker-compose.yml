@@ -33,6 +33,7 @@ services:
     depends_on:
       - phoenix-db
     environment:
+      DB_HOST: phoenix-db
       DATABASE_URL: ecto://postgres:postgres@phoenix-db/phoenix_api
       SECRET_KEY_BASE: ${PHOENIX_SECRET_KEY_BASE:-thisisasecret111}
       PHX_HOST: 0.0.0.0
