@@ -9,6 +9,7 @@ use App\Entity\Photo;
 interface PhotoRepositoryInterface
 {
     /**
+     * @param array<string, string|null> $filters
      * @return array<int, Photo>
      */
     public function findAllWithUsers(array $filters = []): array;
