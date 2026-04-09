@@ -49,6 +49,8 @@ Z treści zadania wynika dla mnie, że istotne jest nie tylko końcowe rozwiąza
 - Pierwszy wychwycony problem dotyczył encji `Like`, która została w `src/Likes` zamiast trafić razem z pozostałymi encjami do `src/Entity`. Porządkuję to i przenoszę ją do właściwego miejsca, żeby struktura projektu była spójna.
 - Zauważyłem też zbędną komplikację w warstwie obsługi reakcji na zdjęcia. `LikeService` dublował część odpowiedzialności `PhotoReactionService`, a przy tym wprowadzał niesymetryczny przepływ między `like` i `unlike`, więc uprościłem ten obszar przez usunięcie `LikeService` i zostawienie całej logiki reakcji w jednym miejscu.
 - Przeniosłem też `PhoenixPhotoImportRateLimitException` z `src/Photo/Service` do `src/Photo/Exception`, żeby ujednolicić organizację wyjątków w module `Photo` i ułatwić dalsze utrzymanie kodu.
+- Uporządkowałem też architekturę PhoenixApi, dodając contexty `Accounts` i `Media` oraz przepinając na nie kontroler i plugi. Dzięki temu warstwa web nie odwołuje się już bezpośrednio do `Repo`, schem i limitera, tylko korzysta ze spójnego API modułów domenowych.
+- Do tego dopisałem testy dla nowych funkcji contextów, żeby zabezpieczyć ten refaktor.
 
 
 ## Jak używam AI

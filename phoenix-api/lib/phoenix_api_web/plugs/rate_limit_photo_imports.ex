@@ -4,12 +4,12 @@ defmodule PhoenixApiWeb.Plugs.RateLimitPhotoImports do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias PhoenixApi.RateLimit.PhotoImportLimiter
+  alias PhoenixApi.Media
 
   def init(opts), do: opts
 
   def call(%Plug.Conn{assigns: %{current_user: current_user}} = conn, _opts) do
-    case PhotoImportLimiter.allow_import(current_user.id) do
+    case Media.allow_photo_import(current_user.id) do
       :ok ->
         conn
 

@@ -1,9 +1,7 @@
 defmodule PhoenixApiWeb.PhotoController do
   use PhoenixApiWeb, :controller
 
-  alias PhoenixApi.Repo
-  alias PhoenixApi.Media.Photo
-  import Ecto.Query
+  alias PhoenixApi.Media
 
   @base_fields [:id, :photo_url]
   @optional_fields [
@@ -27,9 +25,8 @@ defmodule PhoenixApiWeb.PhotoController do
     fields = requested_fields(params)
 
     photos =
-      Photo
-      |> where([p], p.user_id == ^current_user.id)
-      |> Repo.all()
+      current_user.id
+      |> Media.list_user_photos()
       |> Enum.map(&serialize_photo(&1, fields))
 
     json(conn, %{photos: photos})
