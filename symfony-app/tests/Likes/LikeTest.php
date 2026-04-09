@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Likes;
 
+use App\Entity\Like;
 use App\Entity\Photo;
 use App\Entity\User;
-use App\Likes\Like;
 use PHPUnit\Framework\TestCase;
 
 final class LikeTest extends TestCase

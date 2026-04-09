@@ -44,6 +44,9 @@ Z treści zadania wynika dla mnie, że istotne jest nie tylko końcowe rozwiąza
 - W PhoenixApi zaimplementowałem rate limiting dla importu zdjęć z wykorzystaniem OTP (`GenServer`): pojedynczy użytkownik może wykonać maksymalnie 5 importów w ciągu 10 minut, a globalnie wszystkie importy są ograniczone do 1000 na godzinę.
 - Po stronie SymfonyApp dodałem też obsługę błędu przekroczenia limitu importu, tak aby użytkownik zamiast ogólnego błędu dostał czytelny komunikat z informacją, że powinien spróbować ponownie za 10 minut.
 - Doprecyzowałem również obsługę limitów importu tak, aby rozróżniać limit użytkownika i limit globalny. PhoenixApi zwraca teraz osobne błędy `429` dla obu przypadków, a SymfonyApp pokazuje użytkownikowi adekwatny komunikat zależnie od źródła ograniczenia: dla limitu użytkownika `Import limit reached for your account. Try again in 10 minutes.`, a dla limitu globalnego `Import limit reached for the service. Try again later.`.
+- Uzupełniłem też `README` o bardziej szczegółowe opisy projektu oraz dodałem zrzuty ekranu aplikacji, żeby repozytorium lepiej pokazywało zakres wykonanej pracy i aktualny wygląd interfejsu.
+- Po napisaniu działającej wersji aplikacji zrobiłem sobie kilka godzin przerwy, a potem wróciłem do projektu z nastawieniem na własny przegląd kodu. Traktuję ten etap jako wewnętrzny code review po czasie, bo właśnie wtedy najłatwiej zauważyć rzeczy, które umknęły w trakcie intensywnej implementacji.
+- Pierwszy wychwycony problem dotyczył encji `Like`, która została w `src/Likes` zamiast trafić razem z pozostałymi encjami do `src/Entity`. Porządkuję to i przenoszę ją do właściwego miejsca, żeby struktura projektu była spójna.
 
 
 ## Jak używam AI
