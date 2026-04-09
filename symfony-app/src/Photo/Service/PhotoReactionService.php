@@ -8,15 +8,14 @@ use App\Entity\Photo;
 use App\Entity\User;
 use App\Likes\DuplicateLikeException;
 use App\Likes\LikeRepositoryInterface;
-use App\Likes\LikeServiceInterface;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 
 class PhotoReactionService implements PhotoReactionServiceInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly LikeRepositoryInterface $likeRepository,
-        private readonly LikeServiceInterface $likeService
+        private readonly LikeRepositoryInterface $likeRepository
     ) {
     }
 
@@ -32,8 +31,9 @@ class PhotoReactionService implements PhotoReactionServiceInterface
         }
 
         try {
-            $this->likeService->execute($user, $photo);
-        } catch (DuplicateLikeException) {
+            $this->likeRepository->createLike($user, $photo);
+            $this->likeRepository->updatePhotoCounter($photo, 1);
+        } catch (UniqueConstraintViolationException|DuplicateLikeException) {
             return PhotoReactionResult::alreadyLiked($photo);
         }
 
