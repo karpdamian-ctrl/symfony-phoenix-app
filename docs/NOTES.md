@@ -1,5 +1,9 @@
 # Notes
 
+Ten log powstawał na bieżąco w trakcie pracy. Przed pushowaniem kolejnych commitów zlecałem AI dopisywanie do niego wprowadzonych zmian oraz moich bieżących przemyśleń i decyzji roboczych.
+
+Z treści zadania wynika dla mnie, że istotne jest nie tylko końcowe rozwiązanie, ale też sposób działania, podejmowania decyzji i iteracyjnego rozwijania projektu. Dlatego zostawiam ten dziennik w dość surowej formie, zamiast wygładzać go do finalnego, „raportowego” opisu.
+
 ## Dziennik
 
 ### 2026-04-08

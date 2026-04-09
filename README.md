@@ -1,3 +1,5 @@
+> Szczegółowy opis decyzji, zmian i podejścia do zadania: [docs/NOTES.md](docs/NOTES.md)
+
 | Aplikacja | CI | Coverage |
 |---|---|---|
 | Symfony | [![Symfony CI](https://github.com/karpdamian-ctrl/rekrutacja/actions/workflows/symfony-ci.yml/badge.svg)](https://github.com/karpdamian-ctrl/rekrutacja/actions/workflows/symfony-ci.yml) | [![Coverage](https://codecov.io/gh/karpdamian-ctrl/rekrutacja/branch/master/graph/badge.svg?flag=symfony)](https://codecov.io/gh/karpdamian-ctrl/rekrutacja) |
