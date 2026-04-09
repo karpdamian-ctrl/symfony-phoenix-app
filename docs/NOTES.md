@@ -46,20 +46,6 @@ Z treści zadania wynika dla mnie, że istotne jest nie tylko końcowe rozwiąza
 - Doprecyzowałem również obsługę limitów importu tak, aby rozróżniać limit użytkownika i limit globalny. PhoenixApi zwraca teraz osobne błędy `429` dla obu przypadków, a SymfonyApp pokazuje użytkownikowi adekwatny komunikat zależnie od źródła ograniczenia: dla limitu użytkownika `Import limit reached for your account. Try again in 10 minutes.`, a dla limitu globalnego `Import limit reached for the service. Try again later.`.
 
 
-## Zadanie 1 - najważniejsze wprowadzone poprawki
-
-- Naprawiłem błąd logowania, w którym poprawny token pozwalał zalogować dowolnego użytkownika. Logowanie wymaga teraz poprawnego powiązania konkretnego tokenu z konkretnym użytkownikiem i jest zabezpieczone testami.
-- Dodałem ochronę CSRF dla logowania, wylogowania oraz operacji `like/unlike`, razem z testami pokrywającymi brak i niepoprawny token.
-- Dodałem indeks unikalny dla lajków na poziomie bazy i obsłużyłem przypadek podwójnego lajka po stronie aplikacji, tak aby logika była bezpieczna również przy równoległych requestach.
-- Rozdzieliłem wcześniejszy toggle lajków na dwa osobne endpointy `POST`: `like` i `unlike`. Dzięki temu zachowanie aplikacji jest bardziej przewidywalne, a kod łatwiejszy do rozwijania i testowania.
-- Domknąłem testy funkcjonalne wszystkich kontrolerów oraz rozszerzyłem testy jednostkowe serwisów i bazowego kontrolera, tak aby najważniejsze elementy warstwy HTTP i logiki aplikacyjnej były pokryte testami.
-- Przeniosłem logikę biznesową z kontrolerów do serwisów (`AuthService`, `PhotoReactionService`), a kontrolery zostawiłem jako cienką warstwę HTTP odpowiedzialną za request, walidację i odpowiedź.
-- Przy imporcie zdjęć SymfonyApp jawnie wskazuje w requestcie do PhoenixApi, które pola zdjęć chce pobrać, a Phoenix zwraca tylko dozwolone i wyraźnie zamówione atrybuty. Dzięki temu kontrakt między aplikacjami jest bardziej świadomy, odpowiedzi lżejsze, a integracja łatwiejsza do rozwijania bez przesyłania nadmiarowych danych.
-- Dodałem interfejsy dla istotnych serwisów i repozytoriów, żeby oprzeć zależności na kontraktach i lepiej przygotować kod pod dalszą rozbudowę oraz wymianę implementacji.
-- Wydzieliłem wspólne elementy warstwy kontrolerów do `AppController`, żeby nie duplikować logiki pobierania użytkownika z sesji, walidacji CSRF i tłumaczeń.
-- Wyniosłem komunikaty do pliku tłumaczeń, żeby przygotować projekt pod łatwiejszą rozbudowę o kolejne języki.
-- Uporządkowałem strukturę plików w bardziej modułowy układ (`Home`, `Auth`, `Photo`, `Profile`, `Shared`, `Likes`), dzięki czemu kod jest czytelniejszy i łatwiejszy do rozwijania w podziale na obszary funkcjonalne.
-
 ## Jak używam AI
 
 AI wykorzystuję przede wszystkim jako narzędzie do iteracyjnej współpracy przy implementacji, testach i porządkowaniu kodu. Zaczynam od własnej analizy problemu i wymagań, a następnie prowadzę pracę krok po kroku, dostarczając precyzyjny kontekst, wskazując konkretne pliki, doprecyzowując oczekiwany efekt i na bieżąco korygując kierunek, gdy rozwiązanie zaczyna odchodzić od założeń zadania.
