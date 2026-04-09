@@ -43,6 +43,7 @@ Z treści zadania wynika dla mnie, że istotne jest nie tylko końcowe rozwiąza
 - Dodałem też wyświetlanie daty zrobienia zdjęcia na kaflu, żeby użytkownik mógł wygodniej odczytać tę informację i filtrować zdjęcia również po dacie wykonania.
 - W PhoenixApi zaimplementowałem rate limiting dla importu zdjęć z wykorzystaniem OTP (`GenServer`): pojedynczy użytkownik może wykonać maksymalnie 5 importów w ciągu 10 minut, a globalnie wszystkie importy są ograniczone do 1000 na godzinę.
 - Po stronie SymfonyApp dodałem też obsługę błędu przekroczenia limitu importu, tak aby użytkownik zamiast ogólnego błędu dostał czytelny komunikat z informacją, że powinien spróbować ponownie za 10 minut.
+- Doprecyzowałem również obsługę limitów importu tak, aby rozróżniać limit użytkownika i limit globalny. PhoenixApi zwraca teraz osobne błędy `429` dla obu przypadków, a SymfonyApp pokazuje użytkownikowi adekwatny komunikat zależnie od źródła ograniczenia: dla limitu użytkownika `Import limit reached for your account. Try again in 10 minutes.`, a dla limitu globalnego `Import limit reached for the service. Try again later.`.
 
 
 ## Zadanie 1 - najważniejsze wprowadzone poprawki

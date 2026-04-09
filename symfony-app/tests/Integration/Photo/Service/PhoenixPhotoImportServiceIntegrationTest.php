@@ -80,6 +80,36 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
         self::assertSame('2024-06-15T06:30:00+00:00', $photos[0]->getTakenAt()?->format(\DateTimeInterface::ATOM));
     }
 
+    public function testReturnsInvalidTokenForLivePhoenixServerWhenTokenIsWrong(): void
+    {
+        $user = (new User())
+            ->setUsername('integration_invalid_token_user')
+            ->setEmail('integration-invalid@example.com')
+            ->setPhoenixApiToken('invalid-live-token');
+
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        $service = new PhoenixPhotoImportService(
+            $this->httpClient,
+            $this->entityManager,
+            $this->resolvePhoenixBaseUrl()
+        );
+
+        $result = $service->import($user);
+
+        self::assertTrue($result->isInvalidToken());
+        self::assertSame(0, $result->getImportedCount());
+
+        $this->entityManager->clear();
+        $reloadedUser = $this->entityManager->getRepository(User::class)->find($user->getId());
+        $photos = $this->entityManager->getRepository(Photo::class)->findBy([
+            'user' => $reloadedUser,
+        ]);
+
+        self::assertCount(0, $photos);
+    }
+
     private function skipUnlessIntegrationEnabled(): void
     {
         if (getenv('RUN_PHOENIX_INTEGRATION') !== '1') {

@@ -90,8 +90,8 @@ class ProfileController extends AppController
 
         try {
             $result = $phoenixPhotoImportService->import($user);
-        } catch (PhoenixPhotoImportRateLimitException) {
-            $this->addFlash('error', $this->translate('profile.import.rate_limited'));
+        } catch (PhoenixPhotoImportRateLimitException $exception) {
+            $this->addFlash('error', $this->translate($exception->getTranslationKey()));
 
             return $this->redirectToRoute('profile');
         } catch (\RuntimeException) {

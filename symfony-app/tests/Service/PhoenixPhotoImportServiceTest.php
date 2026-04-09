@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\Photo;
 use App\Entity\User;
+use App\Photo\Service\PhoenixPhotoImportRateLimitException;
 use App\Photo\Service\PhoenixPhotoImportService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectRepository;
@@ -178,6 +179,64 @@ final class PhoenixPhotoImportServiceTest extends TestCase
         $this->expectExceptionMessage('Unexpected Phoenix API status: 500');
 
         $service->import($user);
+    }
+
+    public function testImportThrowsUserRateLimitExceptionWhenPhoenixReturnsUserRateLimit(): void
+    {
+        $user = (new User())
+            ->setUsername('profile_user')
+            ->setEmail('profile@example.com')
+            ->setPhoenixApiToken('valid-token');
+
+        $httpClient = new MockHttpClient([
+            new MockResponse(
+                json_encode(['errors' => ['detail' => 'Photo import user rate limit exceeded']], JSON_THROW_ON_ERROR),
+                ['http_code' => 429]
+            ),
+        ]);
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects(self::never())->method('getRepository');
+        $entityManager->expects(self::never())->method('persist');
+        $entityManager->expects(self::never())->method('flush');
+
+        $service = new PhoenixPhotoImportService($httpClient, $entityManager, 'http://phoenix.test');
+
+        try {
+            $service->import($user);
+            self::fail('Expected PhoenixPhotoImportRateLimitException to be thrown.');
+        } catch (PhoenixPhotoImportRateLimitException $exception) {
+            self::assertSame('profile.import.rate_limited_user', $exception->getTranslationKey());
+        }
+    }
+
+    public function testImportThrowsGlobalRateLimitExceptionWhenPhoenixReturnsGlobalRateLimit(): void
+    {
+        $user = (new User())
+            ->setUsername('profile_user')
+            ->setEmail('profile@example.com')
+            ->setPhoenixApiToken('valid-token');
+
+        $httpClient = new MockHttpClient([
+            new MockResponse(
+                json_encode(['errors' => ['detail' => 'Photo import global rate limit exceeded']], JSON_THROW_ON_ERROR),
+                ['http_code' => 429]
+            ),
+        ]);
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects(self::never())->method('getRepository');
+        $entityManager->expects(self::never())->method('persist');
+        $entityManager->expects(self::never())->method('flush');
+
+        $service = new PhoenixPhotoImportService($httpClient, $entityManager, 'http://phoenix.test');
+
+        try {
+            $service->import($user);
+            self::fail('Expected PhoenixPhotoImportRateLimitException to be thrown.');
+        } catch (PhoenixPhotoImportRateLimitException $exception) {
+            self::assertSame('profile.import.rate_limited_global', $exception->getTranslationKey());
+        }
     }
 
     public function testImportSkipsInvalidPayloadItemsAndDoesNotFlushWhenNothingNewWasImported(): void

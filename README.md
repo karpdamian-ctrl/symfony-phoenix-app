@@ -90,3 +90,29 @@ docker-compose restart phoenix
 ```bash
 docker-compose exec phoenix mix test
 ```
+
+## Quality
+
+### Symfony
+```bash
+docker-compose exec symfony composer test
+docker-compose exec symfony composer test-integration
+docker-compose exec symfony composer phpstan
+docker-compose exec symfony composer php-cs-fixer
+```
+
+### Symfony integration test
+Wymaga działającego i zseedowanego Phoenix API.
+
+```bash
+docker-compose exec phoenix mix ecto.migrate
+docker-compose exec phoenix mix run priv/repo/seeds.exs
+docker-compose exec symfony composer test-integration
+```
+
+### Phoenix
+```bash
+docker-compose exec phoenix mix test
+docker-compose exec phoenix mix format --check-formatted
+docker-compose exec phoenix mix credo
+```

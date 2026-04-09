@@ -253,7 +253,10 @@ final class ProfileControllerTest extends WebTestCase
         $this->replaceImportService(new class () implements PhoenixPhotoImportServiceInterface {
             public function import(User $user): PhoenixPhotoImportResult
             {
-                throw new \App\Photo\Service\PhoenixPhotoImportRateLimitException('Rate limited.');
+                throw new \App\Photo\Service\PhoenixPhotoImportRateLimitException(
+                    'profile.import.rate_limited_user',
+                    'Rate limited.'
+                );
             }
         });
 
@@ -270,7 +273,7 @@ final class ProfileControllerTest extends WebTestCase
         $this->client->followRedirect();
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Import limit reached. Try again in 10 minutes.', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('Import limit reached for your account. Try again in 10 minutes.', (string) $this->client->getResponse()->getContent());
     }
 
     public function testImportPhotosShowsSuccessMessage(): void

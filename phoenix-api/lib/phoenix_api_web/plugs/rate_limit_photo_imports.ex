@@ -13,10 +13,16 @@ defmodule PhoenixApiWeb.Plugs.RateLimitPhotoImports do
       :ok ->
         conn
 
-      {:error, _reason} ->
+      {:error, :user_limit_exceeded} ->
         conn
         |> put_status(:too_many_requests)
-        |> json(%{errors: %{detail: "Photo import rate limit exceeded"}})
+        |> json(%{errors: %{detail: "Photo import user rate limit exceeded"}})
+        |> halt()
+
+      {:error, :global_limit_exceeded} ->
+        conn
+        |> put_status(:too_many_requests)
+        |> json(%{errors: %{detail: "Photo import global rate limit exceeded"}})
         |> halt()
     end
   end
