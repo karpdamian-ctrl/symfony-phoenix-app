@@ -26,18 +26,25 @@ services:
       - "5432:5432"
 
   phoenix:
-    build: 
+    build:
       context: ./phoenix-api
       dockerfile: Dockerfile
       target: dev
+      args:
+        LOCAL_UID: ${LOCAL_UID:-1000}
+        LOCAL_GID: ${LOCAL_GID:-1000}
     depends_on:
       - phoenix-db
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
       DB_HOST: phoenix-db
       DATABASE_URL: ecto://postgres:postgres@phoenix-db/phoenix_api
       SECRET_KEY_BASE: ${PHOENIX_SECRET_KEY_BASE:-thisisasecret111}
       PHX_HOST: 0.0.0.0
       PORT: 4000
+      HOME: /tmp
+      MIX_HOME: /tmp/.mix
+      HEX_HOME: /tmp/.hex
     ports:
       - "4000:4000"
     volumes:
@@ -48,15 +55,20 @@ services:
       context: ./symfony-app
       dockerfile: Dockerfile
       target: dev
+      args:
+        LOCAL_UID: ${LOCAL_UID:-1000}
+        LOCAL_GID: ${LOCAL_GID:-1000}
     depends_on:
       - symfony-db
       - phoenix
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
       APP_ENV: dev
       APP_SECRET: ${SYMFONY_APP_SECRET:-thisisasecret222}
       PHOENIX_BASE_URL: http://phoenix:4000
       DATABASE_URL: postgres://postgres:postgres@symfony-db:5432/symfony_app
       TEST_DATABASE_URL: postgres://postgres:postgres@symfony-db:5432/symfony_app_test
+      HOME: /tmp
     ports:
       - "8000:8000"
     volumes:

@@ -77,6 +77,9 @@ Ten projekt składa się z dwóch oddzielnych aplikacji z własnymi bazami danyc
 
 ## Szybki start
 ```bash
+# Linux: uruchamiaj kontenery jako aktualny użytkownik hosta
+LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose up -d --build --force-recreate
+
 docker-compose up -d
 
 # Konfiguracja bazy danych Symfony
@@ -86,6 +89,12 @@ docker-compose exec symfony php bin/console app:seed
 # Konfiguracja bazy danych Phoenix
 docker-compose exec phoenix mix ecto.migrate
 docker-compose exec phoenix mix run priv/repo/seeds.exs
+```
+
+Sprawdzenie użytkownika w kontenerach:
+```bash
+LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose exec phoenix id
+LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose exec symfony id
 ```
 
 Dostęp do aplikacji:
