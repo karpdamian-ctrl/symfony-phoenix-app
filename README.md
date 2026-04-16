@@ -12,7 +12,7 @@ This repository is a portfolio project that demonstrates end-to-end backend engi
 
 Both services run in Docker, each with its own PostgreSQL database, and communicate through a real HTTP integration.
 
-Implementation notes and architecture decisions are documented in [docs/NOTES.md](docs/NOTES.md).
+Implementation notes and architecture decisions are documented in [docs/NOTES.md](docs/NOTES.md). These are intentionally loose, process-oriented notes showing reasoning and trade-offs, not formal business documentation.
 
 ## Project Highlights
 

@@ -14,8 +14,11 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
 {
+    private const DEFAULT_PHOENIX_DATABASE_URL = 'postgres://postgres:postgres@phoenix-db:5432/phoenix_api';
+
     private EntityManagerInterface $entityManager;
     private HttpClientInterface $httpClient;
+    private string $phoenixApiToken;
 
     protected function setUp(): void
     {
@@ -26,6 +29,7 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
         $this->httpClient = $container->get(HttpClientInterface::class);
 
         $this->skipUnlessIntegrationEnabled();
+        $this->phoenixApiToken = $this->resolvePhoenixApiToken();
         $this->skipUnlessPhoenixIsAvailable();
 
         $connection = $this->entityManager->getConnection();
@@ -44,7 +48,7 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
         $user = (new User())
             ->setUsername('integration_user')
             ->setEmail('integration@example.com')
-            ->setPhoenixApiToken('test_token_user1_abc123');
+            ->setPhoenixApiToken($this->phoenixApiToken);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
@@ -124,7 +128,7 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
         try {
             $response = $this->httpClient->request('GET', $this->resolvePhoenixBaseUrl() . '/api/photos', [
                 'headers' => [
-                    'access-token' => 'test_token_user1_abc123',
+                    'access-token' => $this->phoenixApiToken,
                 ],
                 'timeout' => 2,
             ]);
@@ -142,5 +146,49 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
         $baseUrl = getenv('PHOENIX_BASE_URL') ?: 'http://localhost:4000';
 
         return rtrim($baseUrl, '/');
+    }
+
+    private function resolvePhoenixApiToken(): string
+    {
+        $databaseUrl = \getenv('PHOENIX_DATABASE_URL') ?: self::DEFAULT_PHOENIX_DATABASE_URL;
+        $parsedUrl = \parse_url($databaseUrl);
+
+        if ($parsedUrl === false) {
+            self::markTestSkipped('Invalid PHOENIX_DATABASE_URL format.');
+        }
+
+        $host = $parsedUrl['host'] ?? null;
+        $port = $parsedUrl['port'] ?? 5432;
+        $user = $parsedUrl['user'] ?? null;
+        $password = $parsedUrl['pass'] ?? null;
+        $databaseName = isset($parsedUrl['path']) ? \ltrim($parsedUrl['path'], '/') : null;
+
+        if (
+            !\is_string($host) || $host === ''
+            || !\is_string($user) || $user === ''
+            || !\is_string($databaseName) || $databaseName === ''
+        ) {
+            self::markTestSkipped('Incomplete PHOENIX_DATABASE_URL for resolving integration token.');
+        }
+
+        try {
+            $pdo = new \PDO(
+                \sprintf('pgsql:host=%s;port=%d;dbname=%s', $host, $port, $databaseName),
+                $user,
+                $password ?: ''
+            );
+            $statement = $pdo->query('SELECT api_token FROM users ORDER BY id ASC LIMIT 1');
+            $token = $statement?->fetchColumn();
+
+            if (!\is_string($token) || $token === '') {
+                self::markTestSkipped('No Phoenix API token found in users table.');
+            }
+
+            return $token;
+        } catch (\Throwable) {
+            self::markTestSkipped('Phoenix database is not reachable for integration token lookup.');
+        }
+
+        throw new \RuntimeException('Unreachable state while resolving Phoenix API token.');
     }
 }

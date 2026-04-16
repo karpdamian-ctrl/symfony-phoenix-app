@@ -54,6 +54,7 @@
 - I translated `README` and `NOTES` into English.
 - I added a Symfony console command for listing `username` and `auth token`, and I added automated tests for this command.
 - In Phoenix API, I replaced hardcoded seed tokens with securely generated random tokens and added a `mix` task to list API tokens, including tests for the task.
+- I fixed Symfony integration tests to work with generated Phoenix tokens instead of hardcoded token values.
 
 
 ## How I Use AI
