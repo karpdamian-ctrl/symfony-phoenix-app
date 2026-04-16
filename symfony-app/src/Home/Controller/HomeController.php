@@ -13,9 +13,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Constraints\Length;
-use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class HomeController extends AppController
@@ -83,10 +82,7 @@ class HomeController extends AppController
             $constraint = $violation->getConstraint();
             $propertyPath = $violation->getPropertyPath();
 
-            if (
-                $constraint instanceof Regex
-                && \in_array($propertyPath, ['takenAtFrom', 'takenAtTo'], true)
-            ) {
+            if (\in_array($propertyPath, ['takenAtFrom', 'takenAtTo'], true)) {
                 $errorTranslationKeys['photo.filters.invalid_date'] = true;
                 continue;
             }

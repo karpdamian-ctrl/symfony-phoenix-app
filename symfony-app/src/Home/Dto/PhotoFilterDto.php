@@ -6,7 +6,9 @@ namespace App\Home\Dto;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
+#[Assert\Callback('validateTakenAtFilters')]
 final class PhotoFilterDto
 {
     private const TAKEN_AT_PATTERN = '/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$/';
@@ -57,6 +59,12 @@ final class PhotoFilterDto
         ];
     }
 
+    public function validateTakenAtFilters(ExecutionContextInterface $context): void
+    {
+        $this->validateTakenAtValue($this->takenAtFrom, 'takenAtFrom', $context);
+        $this->validateTakenAtValue($this->takenAtTo, 'takenAtTo', $context);
+    }
+
     private static function normalizeFilterValue(mixed $value): ?string
     {
         if (!\is_string($value)) {
@@ -66,5 +74,31 @@ final class PhotoFilterDto
         $trimmedValue = trim($value);
 
         return $trimmedValue === '' ? null : $trimmedValue;
+    }
+
+    private function validateTakenAtValue(?string $value, string $path, ExecutionContextInterface $context): void
+    {
+        if ($value === null) {
+            return;
+        }
+
+        if (\preg_match(self::TAKEN_AT_PATTERN, $value) !== 1) {
+            return;
+        }
+
+        $format = \str_contains($value, ' ') ? '!Y-m-d H:i' : '!Y-m-d';
+        $parsedDate = \DateTimeImmutable::createFromFormat($format, $value);
+        $parseErrors = \DateTimeImmutable::getLastErrors();
+
+        if (
+            !$parsedDate instanceof \DateTimeImmutable
+            || (($parseErrors['warning_count'] ?? 0) > 0)
+            || (($parseErrors['error_count'] ?? 0) > 0)
+        ) {
+            $context
+                ->buildViolation('Invalid taken_at filter format.')
+                ->atPath($path)
+                ->addViolation();
+        }
     }
 }
