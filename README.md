@@ -1,184 +1,142 @@
-| Aplikacja | CI | Coverage |
+| Application | CI | Coverage |
 |---|---|---|
 | Symfony | [![Symfony CI](https://github.com/karpdamian-ctrl/rekrutacja/actions/workflows/symfony-ci.yml/badge.svg)](https://github.com/karpdamian-ctrl/rekrutacja/actions/workflows/symfony-ci.yml) | [![Coverage](https://codecov.io/gh/karpdamian-ctrl/rekrutacja/branch/master/graph/badge.svg?flag=symfony)](https://codecov.io/gh/karpdamian-ctrl/rekrutacja) |
 | Phoenix | [![Phoenix CI](https://github.com/karpdamian-ctrl/rekrutacja/actions/workflows/phoenix-ci.yml/badge.svg)](https://github.com/karpdamian-ctrl/rekrutacja/actions/workflows/phoenix-ci.yml) | [![Coverage](https://codecov.io/gh/karpdamian-ctrl/rekrutacja/branch/master/graph/badge.svg?flag=phoenix)](https://codecov.io/gh/karpdamian-ctrl/rekrutacja) |
 
-## Zrealizowane Zadania
+## Overview
 
-- ✅ **Zadanie 1:** Poprawiłem jakość SymfonyApp poprzez naprawę błędów bezpieczeństwa i logiki, refaktor struktury oraz rozszerzenie pokrycia testami.
-- ✅ **Zadanie 2:** Dodałem obsługę tokenu Phoenix API w profilu użytkownika oraz ręczny import zdjęć do SymfonyApp.
-- ✅ **Zadanie 3:** Dodałem filtrowanie galerii po `location`, `camera`, `description`, zakresie dat opartym o `taken_at` oraz `username`.
-- ✅ **Zadanie 4:** Zaimplementowałem rate limiting w Phoenix API z użyciem OTP oraz obsłużyłem błędy limitów importu po stronie SymfonyApp.
+This repository is a portfolio project that demonstrates end-to-end backend engineering across two technologies:
 
-Szczegółowe notatki implementacyjne, decyzje architektoniczne i dziennik pracy znajdują się w [docs/NOTES.md](docs/NOTES.md).
+- **Symfony App** (main web app)
+- **Phoenix API** (external service consumed by Symfony)
 
-## Zrzuty Ekranu
+Both services run in Docker, each with its own PostgreSQL database, and communicate through a real HTTP integration.
 
-### Strona główna
+Implementation notes and architecture decisions are documented in [docs/NOTES.md](docs/NOTES.md).
+
+## Project Highlights
+
+- **Cross-framework integration:** Symfony imports photos from Phoenix via HTTP API endpoints.
+- **Full test strategy:** unit, functional, and integration tests across both apps.
+- **Security hardening:** CSRF protection, stricter auth flow, and token/user consistency checks.
+- **Data integrity:** unique DB constraints + application-level guards for likes and imported photos.
+- **Clear domain boundaries:** modular organization and context/service layers instead of controller-heavy logic.
+- **Phoenix OTP rate limiting:** import throttling implemented with `GenServer`, including both user-level and global limits.
+- **Phoenix context architecture:** clean separation into `Accounts` and `Media`, with web layer delegating through domain APIs.
+- **Phoenix plug pipeline:** dedicated plugs for token authentication and import-rate limiting, keeping request guards explicit and composable.
+- **Operational quality:** CI pipelines, static analysis, style checks, and coverage reporting.
+
+## Architecture
+
+- **Symfony App** (`localhost:8000`)
+  - Main UI and business workflows
+  - PostgreSQL database: `symfony_app` (`symfony-db`, exposed on `5432`)
+- **Phoenix API** (`localhost:4000`)
+  - Photo API consumed by Symfony
+  - PostgreSQL database: `phoenix_api` (`phoenix-db`, exposed on `5433`)
+
+## Screenshots
+
+### Home page
 
 <a href="docs/images/homepage.png">
-  <img src="docs/images/homepage.png" alt="Strona główna SymfonyApp" width="700">
+  <img src="docs/images/homepage.png" alt="Symfony app home page" width="700">
 </a>
 
-### Logowanie
+### Login
 
 <a href="docs/images/login.png">
-  <img src="docs/images/login.png" alt="Logowanie do SymfonyApp" width="700">
+  <img src="docs/images/login.png" alt="Symfony app login" width="700">
 </a>
 
-### Profil użytkownika
+### User profile
 
 <a href="docs/images/profil.png">
-  <img src="docs/images/profil.png" alt="Profil użytkownika SymfonyApp" width="700">
+  <img src="docs/images/profil.png" alt="Symfony app user profile" width="700">
 </a>
 
-## Najważniejsze Usprawnienia
+## Quick Start
 
-- Naprawiłem krytyczne problemy związane z uwierzytelnianiem i bezpieczeństwem w SymfonyApp, w tym poprawne powiązanie tokenu z użytkownikiem oraz ochronę CSRF.
-- Zastąpiłem wcześniejszy toggle lajków jawnymi akcjami `like` i `unlike`, dzięki czemu zachowanie aplikacji jest czytelniejsze i bezpieczniejsze przy dalszym rozwoju.
-- Dodałem ograniczenia unikalności na poziomie bazy oraz zabezpieczenia po stronie aplikacji dla lajków i importowanych zdjęć, żeby lepiej chronić integralność danych.
-- Przeniosłem logikę kontrolerów do serwisów i wspólnych abstrakcji, żeby projekt był łatwiejszy w utrzymaniu i rozbudowie.
-- Dodałem warstwowe testy automatyczne obejmujące scenariusze jednostkowe, funkcjonalne i integracyjne.
-- Usprawniłem integrację Symfony z Phoenix, jawnie wskazując w requestach tylko te pola zdjęć, które są rzeczywiście potrzebne.
-- Dodałem filtrowanie, walidację importu oraz obsługę limitów z komunikatami przyjaznymi dla użytkownika.
-- Zaimplementowałem rate limiting importu w Phoenix z użyciem OTP oraz rozróżniłem obsługę limitu użytkownika i limitu globalnego po obu stronach integracji.
-
-## Jakość Projektu
-
-- Pipeline'y GitHub Actions dla Symfony i Phoenix
-- Statyczna analiza i sprawdzanie stylu kodu
-- Testy jednostkowe, funkcjonalne i integracyjne
-- Raportowanie pokrycia testami w badge'ach README
-
-## Jak Sprawdzać Projekt
-
-1. Uruchom środowisko komendą `docker-compose up -d`.
-2. Wykonaj migracje i seedowanie obu aplikacji.
-3. Uruchom checki jakości z sekcji `Quality` poniżej.
-4. Przejrzyj notatki implementacyjne w [docs/NOTES.md](docs/NOTES.md).
-
-## Świadome Kompromisy
-
-- Pozostałem przy filtrowaniu zdjęć w SQL zamiast dodawania Elasticsearcha, ponieważ przy tej skali zadania search engine byłby zbędnym skomplikowaniem rozwiązania.
-- Rate limiting w Phoenix jest oparty o pamięciowy proces OTP `GenServer`, co dobrze pasuje do zakresu zadania, ale przy wielu instancjach aplikacji wymagałoby współdzielonego storage.
-- Testy integracyjne z Phoenix są uruchamiane świadomie, dzięki czemu podstawowa paczka testów pozostaje szybka i niezależna od żyjącej zewnętrznej usługi.
-
-## Architektura
-
-Ten projekt składa się z dwóch oddzielnych aplikacji z własnymi bazami danych:
-
-- **Symfony App** (port 8000): Główna aplikacja internetowa
-  - Baza danych: `symfony-db` (PostgreSQL, port 5432)
-  - Nazwa bazy danych: `symfony_app`
-
-- **Phoenix API** (port 4000): Mikroserwis REST API
-  - Baza danych: `phoenix-db` (PostgreSQL, port 5433)
-  - Nazwa bazy danych: `phoenix_api`
-
-## Szybki start
 ```bash
-# Linux: uruchamiaj kontenery jako aktualny użytkownik hosta
+# Optional on Linux to avoid permission issues with mounted volumes
 LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose up -d --build --force-recreate
 
-docker-compose up -d
+# Or simply:
+docker compose up -d
 
-# Konfiguracja bazy danych Symfony
-docker-compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
-docker-compose exec symfony php bin/console app:seed
+# Symfony setup
+docker compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec symfony php bin/console app:seed
 
-# Konfiguracja bazy danych Phoenix
-docker-compose exec phoenix mix ecto.migrate
-docker-compose exec phoenix mix run priv/repo/seeds.exs
+# Phoenix setup
+docker compose exec phoenix mix ecto.migrate
+docker compose exec phoenix mix run priv/repo/seeds.exs
 ```
 
-Sprawdzenie użytkownika w kontenerach:
-```bash
-LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose exec phoenix id
-LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose exec symfony id
-```
+Access:
 
-Dostęp do aplikacji:
 - Symfony App: http://localhost:8000
 - Phoenix API: http://localhost:4000
 
-## Komendy Symfony
+## How to Use After Setup
 
-### Migracja bazy danych
+After installation and seeding, run the commands below to retrieve credentials for logging in and importing photos:
+
 ```bash
-docker-compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec symfony php bin/console app:auth-tokens:list
+docker compose exec phoenix mix api_tokens.list
 ```
 
-### Ponowne tworzenie bazy danych
-```bash
-docker-compose exec symfony php bin/console doctrine:schema:drop --force --full-database
-docker-compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
-docker-compose exec symfony php bin/console app:seed
-```
+Use the Symfony output (`username` + `token`) to log in to the Symfony app.
+Use the Phoenix output (`api_token`) in Symfony Profile when importing photos from Phoenix API.
 
-### Czyszczenie pamięci podręcznej (Cache)
-```bash
-docker-compose exec symfony php bin/console cache:clear
-```
-
-### Restart
-```bash
-docker-compose restart symfony
-```
-
-### Uruchamianie testów
-```bash
-docker-compose exec symfony php bin/phpunit
-```
-
-## Komendy Phoenix
-
-### Migracja bazy danych
-```bash
-docker-compose exec phoenix mix ecto.migrate
-```
-
-### Seedowanie bazy danych
-```bash
-docker-compose exec phoenix mix run priv/repo/seeds.exs
-```
-
-### Ponowne tworzenie bazy danych
-```bash
-docker-compose exec phoenix mix ecto.reset
-docker-compose exec phoenix mix run priv/repo/seeds.exs
-```
-
-### Restart
-```bash
-docker-compose restart phoenix
-```
-
-### Uruchamianie testów
-```bash
-docker-compose exec phoenix mix test
-```
-
-## Quality
+## Useful Commands
 
 ### Symfony
-```bash
-docker-compose exec symfony composer test
-docker-compose exec symfony composer phpstan
-docker-compose exec symfony composer php-cs-fixer
-```
-
-### Symfony integration test
-Wymaga działającego i zseedowanego Phoenix API.
 
 ```bash
-docker-compose exec phoenix mix ecto.migrate
-docker-compose exec phoenix mix run priv/repo/seeds.exs
-docker-compose exec symfony composer test-integration
+# Tests + quality
+docker compose exec symfony composer test
+docker compose exec symfony composer phpstan
+docker compose exec symfony composer php-cs-fixer
+
+# List users and auth tokens
+docker compose exec symfony php bin/console app:auth-tokens:list
 ```
 
 ### Phoenix
+
 ```bash
-docker-compose exec phoenix mix test
-docker-compose exec phoenix mix format --check-formatted
-docker-compose exec phoenix mix credo
+# Tests + quality
+docker compose exec phoenix mix test
+docker compose exec phoenix mix format --check-formatted
+docker compose exec phoenix mix credo
+
+# List API tokens
+docker compose exec phoenix mix api_tokens.list
 ```
+
+### Cross-app integration test (Symfony -> Phoenix)
+
+Requires Phoenix to be migrated and seeded:
+
+```bash
+docker compose exec phoenix mix ecto.migrate
+docker compose exec phoenix mix run priv/repo/seeds.exs
+docker compose exec symfony composer test-integration
+```
+
+## Testing Scope
+
+- **Unit tests**
+  - Domain/service behavior in isolation.
+- **Functional tests**
+  - Controller-level behavior, request/response, and end-user flows.
+- **Integration tests**
+  - Real Symfony-to-Phoenix communication over HTTP.
+
+## Trade-offs
+
+- SQL-based filtering is used instead of Elasticsearch to keep complexity proportional to data scale.
+- Phoenix rate limiting is in-memory (`GenServer`), which is a practical fit here but would require shared state for multi-instance production scaling.
+- Integration tests are intentionally separated from the default fast suite.

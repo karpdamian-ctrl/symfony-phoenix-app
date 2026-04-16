@@ -17,14 +17,20 @@ alias PhoenixApi.Media.Photo
 Repo.delete_all(Photo)
 Repo.delete_all(User)
 
+generate_api_token = fn ->
+  32
+  |> :crypto.strong_rand_bytes()
+  |> Base.url_encode64(padding: false)
+end
+
 user1 =
   %User{}
-  |> User.changeset(%{api_token: "test_token_user1_abc123"})
+  |> User.changeset(%{api_token: generate_api_token.()})
   |> Repo.insert!()
 
 user2 =
   %User{}
-  |> User.changeset(%{api_token: "test_token_user2_def456"})
+  |> User.changeset(%{api_token: generate_api_token.()})
   |> Repo.insert!()
 
 IO.puts("Created users:")
@@ -123,4 +129,4 @@ IO.puts("\nCreated #{length(photos_user1)} photos for user 1")
 IO.puts("Created #{length(photos_user2)} photos for user 2")
 IO.puts("\nSeeds completed successfully!")
 IO.puts("\nYou can test the API with:")
-IO.puts("  curl -H \"access-token: test_token_user1_abc123\" http://localhost:4000/api/photos")
+IO.puts("  curl -H \"access-token: #{user1.api_token}\" http://localhost:4000/api/photos")
