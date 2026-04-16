@@ -12,6 +12,7 @@ defmodule PhoenixApi.MixProject do
       start_permanent: Mix.env() == :prod,
       preferred_cli_env: preferred_cli_env(),
       test_coverage: [tool: ExCoveralls],
+      dialyzer: [plt_add_apps: [:mix]],
       aliases: aliases(),
       deps: deps()
     ]

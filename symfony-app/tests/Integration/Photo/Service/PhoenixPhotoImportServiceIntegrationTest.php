@@ -178,7 +178,12 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
                 $password ?: ''
             );
             $statement = $pdo->query('SELECT api_token FROM users ORDER BY id ASC LIMIT 1');
-            $token = $statement?->fetchColumn();
+
+            if ($statement === false) {
+                self::markTestSkipped('Could not query Phoenix users table for integration token lookup.');
+            }
+
+            $token = $statement->fetchColumn();
 
             if (!\is_string($token) || $token === '') {
                 self::markTestSkipped('No Phoenix API token found in users table.');
@@ -188,7 +193,5 @@ final class PhoenixPhotoImportServiceIntegrationTest extends KernelTestCase
         } catch (\Throwable) {
             self::markTestSkipped('Phoenix database is not reachable for integration token lookup.');
         }
-
-        throw new \RuntimeException('Unreachable state while resolving Phoenix API token.');
     }
 }

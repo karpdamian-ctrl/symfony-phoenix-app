@@ -15,9 +15,10 @@ defmodule Mix.Tasks.ApiTokens.List do
 
     users =
       Repo.all(
-        from user in User,
+        from(user in User,
           order_by: [asc: user.id],
           select: %{id: user.id, api_token: user.api_token}
+        )
       )
 
     case users do
@@ -46,10 +47,17 @@ defmodule Mix.Tasks.ApiTokens.List do
       |> Enum.max(fn -> String.length(token_header) end)
       |> max(String.length(token_header))
 
-    separator = "+" <> String.duplicate("-", id_width + 2) <> "+" <> String.duplicate("-", token_width + 2) <> "+"
+    separator =
+      "+" <>
+        String.duplicate("-", id_width + 2) <>
+        "+" <> String.duplicate("-", token_width + 2) <> "+"
 
     Mix.shell().info(separator)
-    Mix.shell().info("| #{String.pad_trailing(id_header, id_width)} | #{String.pad_trailing(token_header, token_width)} |")
+
+    Mix.shell().info(
+      "| #{String.pad_trailing(id_header, id_width)} | #{String.pad_trailing(token_header, token_width)} |"
+    )
+
     Mix.shell().info(separator)
 
     Enum.each(users, fn user ->

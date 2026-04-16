@@ -111,6 +111,7 @@ docker compose exec symfony php bin/console app:auth-tokens:list
 docker compose exec phoenix mix test
 docker compose exec phoenix mix format --check-formatted
 docker compose exec phoenix mix credo
+docker compose exec phoenix mix dialyzer
 
 # List API tokens
 docker compose exec phoenix mix api_tokens.list
