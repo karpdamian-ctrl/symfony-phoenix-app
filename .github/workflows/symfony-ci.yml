@@ -209,6 +209,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          slug: karpdamian-ctrl/symfony-phoenix-app
           files: ./symfony-app/coverage.xml
           flags: symfony
           disable_search: true
